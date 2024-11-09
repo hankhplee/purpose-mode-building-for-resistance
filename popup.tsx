@@ -566,6 +566,10 @@ function IndexPopup() {
   const [selectedOption, setSelectedOption] = useState("0 5"); // Default to 5 minutes
   const [isTimerEnabled, setIsTimerEnabled] = useState(false);
 
+  const handleButtonClick = () => {
+    chrome.tabs.create({ url: chrome.runtime.getURL("tabs/dashboard.html")});
+  };
+
   const handleDropdownClick = () => {
     setIsActive(!isActive);
   };
@@ -596,7 +600,7 @@ function IndexPopup() {
         padding: 16,
         width: "300px"
       }}>
-    
+
       <GlobalSwitch
           label={constants.ExtName}
           storage_var={constants.Enable}
@@ -708,6 +712,9 @@ function IndexPopup() {
             {formatTime(selectedOption)}
           </p>
         )}
+      </div>
+      <div className="block">
+        <button className="button is-small is-fullwidth is-outlined is-info" onClick={handleButtonClick}>Open Dashboard</button>
       </div>
 
       <div className="block">  
