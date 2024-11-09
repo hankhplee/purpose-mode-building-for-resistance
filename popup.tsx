@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useState} from "react"
 import { useCollapse } from "react-collapsed";
 import { sendToContentScript } from "@plasmohq/messaging"
 import { sendToBackground } from "@plasmohq/messaging"
@@ -562,56 +562,191 @@ function ExpandableMenu({ name, matchURL, Switches }) {
 function IndexPopup() {
   const [enabled, setEnabled] = useChromeStorageLocal(constants.Enable, false);
 
+  const [isActive, setIsActive] = useState(false);
+  const [selectedOption, setSelectedOption] = useState("0 5"); // Default to 5 minutes
+  const [isTimerEnabled, setIsTimerEnabled] = useState(false);
+
+  const handleDropdownClick = () => {
+    setIsActive(!isActive);
+  };
+
+  const handleOptionClick = (option) => {
+    setSelectedOption(option);
+    setIsActive(false); // Close the dropdown after selecting an option
+  };
+
+  const formatTime = (option) => {
+    const [hours, minutes] = option.split(" ");
+    return `${parseInt(hours)}h ${parseInt(minutes)}m remaining`;
+  };
+
+  const toggleTimer = () => {
+    setIsTimerEnabled(!isTimerEnabled);
+    if (!isTimerEnabled) {
+      setSelectedOption("0 5"); // Reset to default (5 minutes) when enabling the timer
+    }
+  };
+
+  // infinite sroll feature setup
+  const [finite, setFinite] = useChromeStorageLocal(constants.YouTubeInfinite, false);
+  
   return (
     <div
       style={{
         padding: 16,
         width: "300px"
       }}>
-
-    <div className="block">  
-      <ExpandableMenu
-          name="Block autoplay setting"
-          matchURL="setting"
-          Switches={AutoPlaySwitch}
-          />
-    </div>
-
+    
       <GlobalSwitch
-        label={constants.ExtName}
-        storage_var={constants.Enable}
-        checked={enabled}
-        update={setEnabled}
-      />
-      {
-        enabled &&
-        <div>
-          <ExpandableMenu
-            name={constants.Twitter}
-            matchURL="https://x.com"
-            Switches={TwitterSwitches}
-          />
-
-          <ExpandableMenu
-            name={constants.YouTube}
-            matchURL="https://www.youtube.com"
-            Switches={YouTubeSwitches}
-          />
-
-          <ExpandableMenu
-            name={constants.Facebook}
-            matchURL="https://www.facebook.com"
-            Switches={FacebookSwitches}
-          />
-
-          <ExpandableMenu
-            name={constants.LinkedIn}
-            matchURL="https://www.linkedin.com"
-            Switches={LinkedInSwitches}
-          />
-
+          label={constants.ExtName}
+          storage_var={constants.Enable}
+          checked={enabled}
+          update={setEnabled}
+        />
+      
+      <div className="box">
+        <div className="tabs is-small">
+          <ul>
+            <li className="is-active"><a>Scroll</a></li>
+            <li><a>Notifications</a></li>
+            <li><a>Layout</a></li>
+          </ul>
         </div>
-      }
+        <div className="block">
+          <small>
+            <strong>Infinite Scroll</strong> automatically loads more algorithmically-curated content when users scroll to the end of a page. 
+          </small>
+        </div>
+        
+        <ToggleSwitch
+        label="Homepage finite scrolling"
+        storage_var={constants.YouTubeInfinite}
+        checked={finite}
+        update={setFinite}
+      />
+        
+        {/* Timer Enable/Disable Toggle */}
+        {finite && (
+          <label style={{ display: "flex", alignItems: "center", marginBottom: "10px" }}>
+            <input 
+              type="checkbox" 
+              checked={isTimerEnabled} 
+              onChange={toggleTimer} 
+              style={{ marginRight: "5px" }}
+            />
+            <p className="is-size-7">Enable Timer</p>
+          </label>
+        )}
+        {/* Conditionally render dropdown if timer is enabled */}
+        {isTimerEnabled && finite && (
+          <div className={`dropdown ${isActive ? 'is-active' : ''}`}>
+            <div className="dropdown-trigger">
+              <button 
+                className="button is-small" 
+                aria-haspopup="true" 
+                aria-controls="dropdown-menu" 
+                onClick={handleDropdownClick}
+              >
+                <span>Set Timer</span>
+                <span className="icon">
+                  <img 
+                    src={downIcon}
+                    style={{
+                      width: "10px",
+                      height: "10px"
+                    }}
+                    alt="Dropdown icon"
+                  />
+                </span>
+              </button>
+            </div>
+            <div className="dropdown-menu" id="dropdown-menu" role="menu">
+              <div className="dropdown-content">
+                <a 
+                  href="#" 
+                  className="dropdown-item" 
+                  onClick={() => handleOptionClick("0 5")}
+                >
+                  5 minutes
+                </a>
+                <a 
+                  href="#" 
+                  className="dropdown-item" 
+                  onClick={() => handleOptionClick("0 10")}
+                >
+                  10 minutes
+                </a>
+                <a 
+                  href="#" 
+                  className="dropdown-item" 
+                  onClick={() => handleOptionClick("0 15")}
+                >
+                  15 minutes
+                </a>
+                <a 
+                  href="#" 
+                  className="dropdown-item" 
+                  onClick={() => handleOptionClick("0 30")}
+                >
+                  30 minutes
+                </a>
+                <a 
+                  href="#" 
+                  className="dropdown-item" 
+                  onClick={() => handleOptionClick("1 0")}
+                >
+                  1 hour
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+      
+        {/* Display selected option below the dropdown only if timer is enabled */}
+        {isTimerEnabled && finite && (
+          <p className="is-size-7 has-text-link" style={{ marginTop: "10px" }}>
+            {formatTime(selectedOption)}
+          </p>
+        )}
+      </div>
+
+      <div className="block">  
+        <ExpandableMenu
+            name="Block autoplay setting"
+            matchURL="setting"
+            Switches={AutoPlaySwitch}
+            />
+      </div>
+
+        {
+          enabled &&
+          <div>
+            <ExpandableMenu
+              name={constants.Twitter}
+              matchURL="https://x.com"
+              Switches={TwitterSwitches}
+            />
+
+            <ExpandableMenu
+              name={constants.YouTube}
+              matchURL="https://www.youtube.com"
+              Switches={YouTubeSwitches}
+            />
+
+            <ExpandableMenu
+              name={constants.Facebook}
+              matchURL="https://www.facebook.com"
+              Switches={FacebookSwitches}
+            />
+
+            <ExpandableMenu
+              name={constants.LinkedIn}
+              matchURL="https://www.linkedin.com"
+              Switches={LinkedInSwitches}
+            />
+
+          </div>
+        }
     </div>
   )
 }
